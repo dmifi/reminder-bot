@@ -4,11 +4,10 @@ from sqlalchemy.orm import sessionmaker, relationship
 import os
 import re
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
 
-uri = os.getenv("DATABASE_URL")  # or other relevant config var
-if uri.startswith("postgres://"):
-    uri = uri.replace("postgres://", "postgresql://", 1)
+DATABASE_URL = os.getenv("DATABASE_URL")  # or other relevant config var
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 # rest of connection code using the connection string `uri`
 
 Base = declarative_base()
