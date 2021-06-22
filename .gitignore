@@ -8,4 +8,4 @@ bot_app/config.py
 *.bak
 
 # Database
-.sql
+create_db.sql
