@@ -1,0 +1,1 @@
+run: python bot_app/bot.py
