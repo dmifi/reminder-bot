@@ -1,7 +1,9 @@
 from sqlalchemy import Integer, String, Column, create_engine, DateTime, Boolean, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
+import os
 
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
 Base = declarative_base()
 engine = create_engine(DATABASE_URL, echo=True)

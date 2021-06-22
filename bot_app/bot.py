@@ -7,7 +7,9 @@ from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timedelta
 from db_map import Task, Client, session
 import asyncio
+import os
 
+TOKEN = os.environ.get('TOKEN')
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
