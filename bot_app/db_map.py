@@ -2,8 +2,14 @@ from sqlalchemy import Integer, String, Column, create_engine, DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 import os
+import re
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
+
+uri = os.getenv("DATABASE_URL")  # or other relevant config var
+if uri.startswith("postgres://"):
+    uri = uri.replace("postgres://", "postgresql://", 1)
+# rest of connection code using the connection string `uri`
 
 Base = declarative_base()
 engine = create_engine(DATABASE_URL, echo=True)
