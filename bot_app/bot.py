@@ -1,13 +1,17 @@
+import os
 import re
+import asyncio
+
+from datetime import datetime, timedelta
 from typing import NamedTuple
+
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
+
 from sqlalchemy.exc import IntegrityError
-from datetime import datetime, timedelta
+
 from db_map import Task, Client, session
-import asyncio
-import os
 
 TOKEN = os.environ.get('TOKEN')
 
