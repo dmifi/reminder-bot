@@ -1,7 +1,6 @@
 .idea
 venv
 __pycache__
-bot_app/config.py
 .env
 
 # Text backup files
