@@ -2,8 +2,9 @@ import os
 import re
 import asyncio
 
-from datetime import datetime, timedelta
+
 from typing import NamedTuple
+from datetime import datetime, timedelta
 
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
@@ -12,12 +13,10 @@ from aiogram.utils import executor
 from sqlalchemy.exc import IntegrityError
 
 from db_map import Task, Client, session
+import config
 
-TOKEN = os.environ.get('TOKEN')
-
-bot = Bot(token=TOKEN)
+bot = Bot(token=config.TOKEN)
 dp = Dispatcher(bot)
-now = datetime.now()
 
 
 @dp.message_handler(commands=['start'])
@@ -56,6 +55,7 @@ class ParsedMessage(NamedTuple):
 
 
 def get_completed(task_completed):
+    now = datetime.now()
     days_list = ['в понедельник', 'во вторник', 'в среду', 'в четверг', 'в пятницу', 'в субботу', 'в воскресенье',
                  'завтра', 'послезавтра']
     days_dict = dict(zip(days_list, [a for a in range(7)]))
@@ -110,13 +110,14 @@ async def sleep_and_check(seconds_to_wait):
     """ Делает запрос к базе данных каждые 'seconds_to_wait' секунд.
     Отправляет пользователю текст задачи если текущее время больше установленного.
     """
+    now = datetime.now()
     while True:
         await asyncio.sleep(seconds_to_wait)
         query = session.query(Task, Client)
         query = query.join(Client, Client.id == Task.client_id)
         records = query.all()
         for task, client in records:
-            if task.done == False and now >= task.completed:
+            if task.done is False and now >= task.completed:
                 await bot.send_message(
                     chat_id=client.telegram_id,
                     text=task.description)
