@@ -7,7 +7,7 @@ After=network.target
 Type=simple
 User=reminderbot
 WorkingDirectory=/home/reminderbot/ReminderBot/bot_app/
-ExecStart=/ReminderBot/my-venv/bin/python /ReminderBot/app_bot/bot.py --serve-in-foreground
+ExecStart=/home/reminderbot/ReminderBot/my-venv/bin/python3 /home/reminderbot/ReminderBot/bot_app/bot.py --serve-in-foreground
 RestartSec=10
 Restart=always
 
