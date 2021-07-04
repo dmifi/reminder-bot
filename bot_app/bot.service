@@ -1,0 +1,15 @@
+[Unit]
+Description=Telegram bot 'ReminderBot'
+After=syslog.target
+After=network.target
+
+[Service]
+Type=simple
+User=reminderbot
+WorkingDirectory=home/reminderbot/ReminderBot/bot_app/  # рабочая директория (каталог)
+ExecStart=/home/reminderbot/ReminderBot/my-venv/bin/python /home/reminderbot/ReminderBot/app_bot/bot.py --serve-in-foreground
+RestartSec=10
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
