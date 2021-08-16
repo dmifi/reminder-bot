@@ -8,3 +8,5 @@ __pycache__
 
 # Database
 create_db.sql
+
+Dockerfile
