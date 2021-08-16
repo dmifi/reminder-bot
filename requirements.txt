@@ -1,4 +1,4 @@
-aiogram==2.13
+aiogram==2.14.3
 aiohttp==3.7.4.post0
 async-timeout==3.0.1
 attrs==21.2.0
@@ -10,6 +10,7 @@ chardet==4.0.0
 greenlet==1.1.0
 idna==3.2
 multidict==5.1.0
+psycopg2==2.9.1
 psycopg2-binary==2.9.1
 pycares==4.0.0
 pycparser==2.20

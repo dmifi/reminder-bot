@@ -7,9 +7,9 @@ from datetime import datetime, timedelta
 
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
-from aiogram.utils import executor
 from aiogram.utils.executor import start_webhook
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
+from aiogram.dispatcher.webhook import SendMessage
 from sqlalchemy.exc import IntegrityError
 
 from db_map import Task, Client, session
@@ -25,10 +25,9 @@ dp.middleware.setup(LoggingMiddleware())
 @dp.message_handler(commands=['start'])
 async def process_start_command(message: types.Message):
     """ Ответ на сообщение '/start'. Так же сохраняет пользователя в базу данных при первом обращении. """
-    await message.reply(
-        f"Привет %s!\n"
-        f"Этот бот может напомнить о небольших задачах.\n"
-        f"Для описания работы бота введи команду /help" % message.from_user.first_name)
+    message_text = f"Привет {message.from_user.first_name}!\n" \
+                   f"Этот бот может напомнить о небольших задачах.\n" \
+                   f"Для описания работы бота введи команду /help"
     client = Client(
         telegram_id=message.from_user.id,
         telegram_firstname=message.from_user.first_name,
@@ -39,15 +38,16 @@ async def process_start_command(message: types.Message):
         session.commit()
     except IntegrityError:
         session.rollback()
+    return SendMessage(message.from_user.id, message_text)
 
 
 @dp.message_handler(commands=['help'])
 async def process_help_command(message: types.Message):
     """ Ответ на сообщение '/help'. """
-    await message.reply(
-        f'Для использования бота можно отправить сообщения вида: \n'
-        f'"Во вторник почитать книгу."\n'
-        f'По умолчанию бот напомнит о задаче в указанный день недели в 09:00')
+    message_text = 'Для использования бота можно отправить сообщения вида: \n' \
+                   'Во вторник почитать книгу."\n ' \
+                   'По умолчанию бот напомнит о задаче в указанный день недели в 09:00'
+    return SendMessage(message.from_user.id, message_text)
 
 
 class ParsedMessage(NamedTuple):
@@ -100,12 +100,13 @@ async def save_message(message: types.Message):
         )
         session.add(task)
         session.commit()
-        await bot.send_message(message.from_user.id,
-                               f'Привет %s, задача "%s" сохранена.' % (message.from_user.first_name, message.text))
+        message_text = f'Привет {message.from_user.first_name}, задача "{message.text}" сохранена.'
+        return SendMessage(message.from_user.id, message_text)
     except UnboundLocalError:
-        await bot.send_message(message.from_user.id, f'%s, Для использования бота можно отправить сообщения вида: \n'
-                                                     f'"Во вторник почитать книгу."' % message.from_user.first_name)
         session.rollback()
+        message_text = f'{message.from_user.first_name}, Для использования бота можно отправить сообщения вида: \n ' \
+                       f'"Во вторник почитать книгу."'
+        return SendMessage(message.from_user.id, message_text)
 
 
 async def sleep_and_check(seconds_to_wait):
@@ -139,16 +140,7 @@ async def on_startup(dp):
 
 async def on_shutdown(dp):
     logging.warning('Shutting down..')
-
-    # insert code here to run it before shutdown
-
-    # Remove webhook (not acceptable in some cases)
     await bot.delete_webhook()
-
-    # Close DB connection (if used)
-    # await dp.storage.close()
-    # await dp.storage.wait_closed()
-
     logging.warning('Bye!')
 
 
