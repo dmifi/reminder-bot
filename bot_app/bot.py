@@ -1,6 +1,6 @@
 import re
 import asyncio
-
+import logging
 
 from typing import NamedTuple
 from datetime import datetime, timedelta
@@ -8,20 +8,23 @@ from datetime import datetime, timedelta
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
-
+from aiogram.utils.executor import start_webhook
+from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from sqlalchemy.exc import IntegrityError
 
 from db_map import Task, Client, session
 import config
 
+logging.basicConfig(level=logging.INFO)
+
 bot = Bot(token=config.TOKEN)
 dp = Dispatcher(bot)
+dp.middleware.setup(LoggingMiddleware())
 
 
 @dp.message_handler(commands=['start'])
 async def process_start_command(message: types.Message):
-    """ Функция сохраняет пользователя в базу данных при первом обращении.
-    """
+    """ Ответ на сообщение '/start'. Так же сохраняет пользователя в базу данных при первом обращении. """
     await message.reply(
         f"Привет %s!\n"
         f"Этот бот может напомнить о небольших задачах.\n"
@@ -40,6 +43,7 @@ async def process_start_command(message: types.Message):
 
 @dp.message_handler(commands=['help'])
 async def process_help_command(message: types.Message):
+    """ Ответ на сообщение '/help'. """
     await message.reply(
         f'Для использования бота можно отправить сообщения вида: \n'
         f'"Во вторник почитать книгу."\n'
@@ -47,8 +51,7 @@ async def process_help_command(message: types.Message):
 
 
 class ParsedMessage(NamedTuple):
-    """Класс для хранения времени и описания задачи.
-    """
+    """Для сохранения даты завершения задачи и её описания. """
     completed: str
     description: str
 
@@ -68,6 +71,7 @@ def get_completed(task_completed):
 
 
 def parse_message(message):
+    """ Парсинг сообещния и сохранение отдельно даты и описания задачи"""
     days_list = ['в понедельник', 'во вторник', 'в среду', 'в четверг', 'в пятницу', 'в субботу', 'в воскресенье',
                  'завтра', 'послезавтра']
     for day in days_list:
@@ -81,8 +85,7 @@ def parse_message(message):
 
 @dp.message_handler()
 async def save_message(message: types.Message):
-    """Сохраняет в базу данных текст сообщения пользователя как задачу.
-    """
+    """ Сохраняет в базу данных текст сообщения пользователя как задачу. """
     telegram_id = 0
     for telegram_id in session.query(Client.id).filter(Client.telegram_id == message.from_user.id):
         telegram_id = telegram_id[0]
@@ -129,7 +132,33 @@ async def sleep_and_check(seconds_to_wait):
                 session.rollback()
 
 
+async def on_startup(dp):
+    await bot.set_webhook(config.WEBHOOK_URL)
+    await sleep_and_check(15)
+
+
+async def on_shutdown(dp):
+    logging.warning('Shutting down..')
+
+    # insert code here to run it before shutdown
+
+    # Remove webhook (not acceptable in some cases)
+    await bot.delete_webhook()
+
+    # Close DB connection (if used)
+    # await dp.storage.close()
+    # await dp.storage.wait_closed()
+
+    logging.warning('Bye!')
+
+
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.create_task(sleep_and_check(15))
-    executor.start_polling(dp)
+    start_webhook(
+        dispatcher=dp,
+        webhook_path=config.WEBHOOK_PATH,
+        on_startup=on_startup,
+        on_shutdown=on_shutdown,
+        skip_updates=True,
+        host=config.WEBAPP_HOST,
+        port=config.WEBAPP_PORT,
+    )

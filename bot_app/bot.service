@@ -4,9 +4,10 @@ After=syslog.target
 After=network.target
 
 [Service]
+EnvironmentFile=/etc/environment
 Type=simple
 User=reminderbot
-WorkingDirectory=/home/reminderbot/ReminderBot/bot_app/
+WorkingDirectory=/home/reminderbot/ReminderBot/
 ExecStart=/home/reminderbot/ReminderBot/my-venv/bin/python3 /home/reminderbot/ReminderBot/bot_app/bot.py
 RestartSec=10
 Restart=always
