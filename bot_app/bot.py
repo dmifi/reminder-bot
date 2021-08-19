@@ -80,7 +80,7 @@ def parse_message(message):
             task_completed = completed.group(1).lower()
             day_completed = get_completed(task_completed)
             description = completed.group(2).lstrip().capitalize()
-            return ParsedMessage(completed=day_completed, description=description)
+    return ParsedMessage(completed=day_completed, description=description)
 
 
 @dp.message_handler()
@@ -109,13 +109,12 @@ async def save_message(message: types.Message):
         return SendMessage(message.from_user.id, message_text)
 
 
-async def sleep_and_check(seconds_to_wait):
-    """ Делает запрос к базе данных каждые 'seconds_to_wait' секунд.
+async def sleep_and_check():
+    """ Делает запрос к базе данных каждые 15 секунд.
     Отправляет пользователю текст задачи если текущее время больше установленного.
     """
     now = datetime.now()
     while True:
-        await asyncio.sleep(seconds_to_wait)
         query = session.query(Task, Client)
         query = query.join(Client, Client.id == Task.client_id)
         records = query.all()
@@ -131,14 +130,15 @@ async def sleep_and_check(seconds_to_wait):
                     session.rollback()
             else:
                 session.rollback()
+        await asyncio.sleep(15)
 
 
-async def on_startup():
+async def on_startup(dp):
     await bot.set_webhook(config.WEBHOOK_URL)
-    await sleep_and_check(15)
+    await sleep_and_check()
 
 
-async def on_shutdown():
+async def on_shutdown(dp):
     logging.warning('Shutting down..')
     await bot.delete_webhook()
     logging.warning('Bye!')

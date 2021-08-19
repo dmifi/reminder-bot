@@ -1,6 +1,5 @@
 import os
 
-
 # token settings
 TOKEN = os.getenv('TOKEN')
 
