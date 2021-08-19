@@ -1,17 +1,15 @@
 import re
 import asyncio
 import logging
-import ssl
 
 from typing import NamedTuple
 from datetime import datetime, timedelta
 
-from aiohttp import web
-
 from aiogram import Bot, types
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import Dispatcher
-from aiogram.dispatcher.webhook import SendMessage, get_new_configured_app
+from aiogram.dispatcher.webhook import SendMessage
+from aiogram.utils.executor import start_webhook
 from sqlalchemy.exc import IntegrityError
 
 from db_map import Task, Client, session
@@ -135,28 +133,24 @@ async def sleep_and_check(seconds_to_wait):
                 session.rollback()
 
 
-async def on_startup(dp):
-    webhook = await bot.get_webhook_info()
-
-    if webhook.url != config.WEBHOOK_URL:
-        if not webhook.url:
-            await bot.delete_webhook()
-        await bot.set_webhook(config.WEBHOOK_URL, certificate=open(config.WEBHOOK_SSL_CERT, 'rb'))
-
+async def on_startup():
+    await bot.set_webhook(config.WEBHOOK_URL)
     await sleep_and_check(15)
 
 
-async def on_shutdown(dp):
+async def on_shutdown():
     logging.warning('Shutting down..')
     await bot.delete_webhook()
     logging.warning('Bye!')
 
 
 if __name__ == '__main__':
-    app = get_new_configured_app(dispatcher=dp, path=config.WEBHOOK_URL_PATH)
-    app.on_startup.append(on_startup)
-    app.on_shutdown.append(on_shutdown)
-
-    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-    context.load_cert_chain(config.WEBHOOK_SSL_CERT, config.WEBHOOK_SSL_PRIV)
-    web.run_app(app, host=config.WEBAPP_HOST, port=config.WEBAPP_PORT, ssl_context=context)
+    start_webhook(
+        dispatcher=dp,
+        webhook_path=config.WEBHOOK_PATH,
+        on_startup=on_startup,
+        on_shutdown=on_shutdown,
+        skip_updates=True,
+        host=config.WEBAPP_HOST,
+        port=config.WEBAPP_PORT,
+    )

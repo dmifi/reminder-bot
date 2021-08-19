@@ -4,9 +4,9 @@ After=network.target
 
 [Service]
 EnvironmentFile=/etc/environment
-WorkingDirectory=/home/reminderbot/ReminderBot/
-ExecStart=/home/reminderbot/ReminderBot/my-venv/bin/python3 /home/reminderbot/ReminderBot/bot_app/bot.py --server-in-foreground
-ExecReload=/home/reminderbot/ReminderBot/my-venv/bin/python3 /home/reminderbot/ReminderBot/bot_app/bot.py --server-in-foreground
+WorkingDirectory=/home/bot/ReminderBot/
+ExecStart=/home/bot/ReminderBot/my-venv/bin/python3 /home/bot/ReminderBot/bot_app/bot.py --server-in-foreground
+ExecReload=/home/bot/ReminderBot/my-venv/bin/python3 /home/bot/ReminderBot/bot_app/bot.py --server-in-foreground
 KillMode=process
 RestartSec=10
 Restart=always
