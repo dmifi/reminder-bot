@@ -135,7 +135,7 @@ async def sleep_and_check():
 
 async def on_startup(dp):
     await bot.set_webhook(config.WEBHOOK_URL)
-    await sleep_and_check()
+    asyncio.create_task(sleep_and_check())
 
 
 async def on_shutdown(dp):
