@@ -133,23 +133,17 @@ async def sleep_and_check():
             session.rollback()
 
 
-def send_message_to_admin(dp):
-    return SendMessage(chat_id=710258618, text="Бот запущен")
-
-
-async def check_schedule_jobs():
-    return SendMessage(chat_id=710258618, text="Отложенные сообщения работают")
+async def send_message_to_admin(dp: Dispatcher):
+    await dp.bot.send_message(chat_id=710258618, text="Отложенные сообщения работают")
 
 
 def schedule_jobs():
-    scheduler.add_job(sleep_and_check, "cron", hour=9, minute=0, second=1, args=(dp,))
-    scheduler.add_job(check_schedule_jobs, "interval", seconds=30, args=(dp,))
+    scheduler.add_job(send_message_to_admin, "interval", seconds=5, args=(dp, ))
 
 
 async def on_startup(dp):
     await bot.set_webhook(config.WEBHOOK_URL)
     schedule_jobs()
-    send_message_to_admin(dp)
 
 
 async def on_shutdown(dp):
