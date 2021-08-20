@@ -112,7 +112,7 @@ async def save_message(message: types.Message):
 
 
 async def sleep_and_check():
-    """ Делает запрос к базе данных каждые 15 секунд.
+    """ Делает запрос к базе данных.
     Отправляет пользователю текст задачи если текущее время больше установленного.
     """
     now = datetime.now()
@@ -133,7 +133,7 @@ async def sleep_and_check():
             session.rollback()
 
 
-async def send_message_to_admin():
+def send_message_to_admin(dp):
     return SendMessage(chat_id=710258618, text="Бот запущен")
 
 
@@ -142,14 +142,14 @@ async def check_schedule_jobs():
 
 
 def schedule_jobs():
-    scheduler.add_job(sleep_and_check, "cron", hour=9, minute=0, second=1)
-    scheduler.add_job(check_schedule_jobs, "interval", seconds=30)
+    scheduler.add_job(sleep_and_check, "cron", hour=9, minute=0, second=1, args=(dp,))
+    scheduler.add_job(check_schedule_jobs, "interval", seconds=30, args=(dp,))
 
 
 async def on_startup(dp):
     await bot.set_webhook(config.WEBHOOK_URL)
     schedule_jobs()
-    await send_message_to_admin()
+    send_message_to_admin(dp)
 
 
 async def on_shutdown(dp):
