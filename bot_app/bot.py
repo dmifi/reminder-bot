@@ -111,7 +111,7 @@ async def save_message(message: types.Message):
         return SendMessage(message.from_user.id, message_text)
 
 
-async def sleep_and_check():
+async def send_task_from_db(dp: Dispatcher):
     """ Делает запрос к базе данных.
     Отправляет пользователю текст задачи если текущее время больше установленного.
     """
@@ -126,11 +126,15 @@ async def sleep_and_check():
                 session.commit()
             except IntegrityError:
                 session.rollback()
-            return SendMessage(
+            await dp.bot.send_message(
                 chat_id=client.telegram_id,
                 text=task.description)
         else:
             session.rollback()
+
+
+async def send_message_that_bot_is_running(dp: Dispatcher):
+    await dp.bot.send_message(chat_id=710258618, text="Бот запущен")
 
 
 async def send_message_to_admin(dp: Dispatcher):
@@ -138,12 +142,14 @@ async def send_message_to_admin(dp: Dispatcher):
 
 
 def schedule_jobs():
-    scheduler.add_job(send_message_to_admin, "interval", seconds=5, args=(dp, ))
+    scheduler.add_job(send_message_to_admin, "interval", hours=1, args=(dp, ))
+    scheduler.add_job(send_task_from_db, "interval", minutes=1, args=(dp, ))
 
 
 async def on_startup(dp):
     await bot.set_webhook(config.WEBHOOK_URL)
     schedule_jobs()
+    await send_message_that_bot_is_running(dp)
 
 
 async def on_shutdown(dp):
