@@ -1,5 +1,4 @@
 import re
-import asyncio
 import logging
 
 from typing import NamedTuple
@@ -10,10 +9,13 @@ from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import Dispatcher
 from aiogram.dispatcher.webhook import SendMessage
 from aiogram.utils.executor import start_webhook
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy.exc import IntegrityError
 
 from db_map import Task, Client, session
 import config
+
+scheduler = AsyncIOScheduler()
 
 logging.basicConfig(level=logging.INFO)
 
@@ -104,7 +106,7 @@ async def save_message(message: types.Message):
         return SendMessage(message.from_user.id, message_text)
     except UnboundLocalError:
         session.rollback()
-        message_text = f'{message.from_user.first_name}, Для использования бота можно отправить сообщения вида: \n ' \
+        message_text = f'{message.from_user.first_name}, Для использования бота можно отправить сообщения вида: \n' \
                        f'"Во вторник почитать книгу."'
         return SendMessage(message.from_user.id, message_text)
 
@@ -114,28 +116,40 @@ async def sleep_and_check():
     Отправляет пользователю текст задачи если текущее время больше установленного.
     """
     now = datetime.now()
-    while True:
-        query = session.query(Task, Client)
-        query = query.join(Client, Client.id == Task.client_id)
-        records = query.all()
-        for task, client in records:
-            if task.done is False and now >= task.completed:
-                await bot.send_message(
-                    chat_id=client.telegram_id,
-                    text=task.description)
-                task.done = True
-                try:
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
-            else:
+    query = session.query(Task, Client)
+    query = query.join(Client, Client.id == Task.client_id)
+    records = query.all()
+    for task, client in records:
+        if task.done is False and now >= task.completed:
+            task.done = True
+            try:
+                session.commit()
+            except IntegrityError:
                 session.rollback()
-        await asyncio.sleep(15)
+            return SendMessage(
+                chat_id=client.telegram_id,
+                text=task.description)
+        else:
+            session.rollback()
+
+
+async def send_message_to_admin():
+    return SendMessage(chat_id=710258618, text="Бот запущен")
+
+
+async def check_schedule_jobs():
+    return SendMessage(chat_id=710258618, text="Отложенные сообщения работают")
+
+
+def schedule_jobs():
+    scheduler.add_job(sleep_and_check, "cron", hour=9, minute=0, second=1)
+    scheduler.add_job(check_schedule_jobs, "interval", seconds=30)
 
 
 async def on_startup(dp):
     await bot.set_webhook(config.WEBHOOK_URL)
-    asyncio.create_task(sleep_and_check())
+    schedule_jobs()
+    await send_message_to_admin()
 
 
 async def on_shutdown(dp):
@@ -145,6 +159,7 @@ async def on_shutdown(dp):
 
 
 if __name__ == '__main__':
+    scheduler.start()
     start_webhook(
         dispatcher=dp,
         webhook_path=config.WEBHOOK_PATH,
